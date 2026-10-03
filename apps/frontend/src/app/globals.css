@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --border: 214 32% 91%;
+  --muted: 210 40% 96%;
+  --primary: 243 75% 59%;
+  --primary-foreground: 0 0% 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+* {
+  @apply border-slate-200;
+}
+
+.login-page {
+  background: radial-gradient(circle at top left, #f4f7ff 0%, #f8fafc 32%, #edf2ff 100%);
+}
+
+.login-visual {
+  background: linear-gradient(135deg, #020617 0%, #111827 45%, #0f172a 100%);
+}
+
+.login-pattern {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-animate {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.login-page {
+  background: radial-gradient(circle at top left, #f4f7ff 0%, #f8fafc 32%, #edf2ff 100%);
+}
+
+.login-visual {
+  background: linear-gradient(135deg, #020617 0%, #111827 45%, #0f172a 100%);
+}
+
+.login-pattern {
+  background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-animate {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@layer components {
+  .container-shell {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
