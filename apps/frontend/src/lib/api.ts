@@ -7,7 +7,7 @@ const resolveApiBaseUrl = () => {
 
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0'].includes(hostname);
+    const isLocalHost = ['localhost', '127.0.0.1', '0.0.0.0/0'].includes(hostname);
     const backendHost = isLocalHost ? hostname : 'localhost';
     return `http://${backendHost}:8000/api`;
   }
