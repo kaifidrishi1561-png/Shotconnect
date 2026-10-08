@@ -16,10 +16,7 @@ export default function LoginPage() {
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setLoading(true);
-  
-
     setError('');
-
 
     try {
       const response = await api.post('/auth/login', { email, password });
