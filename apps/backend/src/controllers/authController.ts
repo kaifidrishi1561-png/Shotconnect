@@ -7,6 +7,8 @@ import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema 
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { env } from '../config/env';
 
+import jwt from 'jsonwebtoken';
+
 
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
   const isProduction = process.env.NODE_ENV === 'production' || env.nodeEnv === 'production';
@@ -132,34 +134,54 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 };
 
+
 export const logout = async (_req: Request, res: Response) => {
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  const isProduction = process.env.NODE_ENV === 'production' || env.nodeEnv === 'production';
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
+    path: '/'
+  };
+
+  // बिलकुल उन्हीं ऑप्शन्स के साथ डिलीट करें ताकि क्रॉस-डोमेन कुकी क्लियर हो सके
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+
   res.status(200).json(sendSuccess('Logged out successfully'));
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
-  const refresh = req.cookies.refreshToken;
+  const refresh = req.cookies?.refreshToken;
+
   if (!refresh) {
     res.status(401).json(sendError('Refresh token required'));
     return;
   }
 
   try {
-    const jwt = await import('jsonwebtoken');
-    const payload = jwt.default.verify(refresh, env.jwtRefreshSecret) as { id: string; email: string; role: string };
+    const payload = jwt.verify(refresh, env.jwtRefreshSecret) as {
+      id: string;
+      email: string;
+      role: any;
+    };
+
     const user = await User.findById(payload.id);
 
-    if (!user) {
-      res.status(401).json(sendError('Invalid refresh token'));
+    if (!user || user.status === 'BLOCKED') {
+      res.status(401).json(sendError('Invalid session or user inactive'));
       return;
     }
 
     const tokens = issueTokens(user);
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-    res.status(200).json(sendSuccess('Token refreshed', { accessToken: tokens.accessToken }));
+
+    res.status(200).json(
+      sendSuccess('Token refreshed', { accessToken: tokens.accessToken })
+    );
   } catch (error) {
-    res.status(401).json(sendError('Invalid refresh token'));
+    res.status(401).json(sendError('Invalid or expired refresh token'));
   }
 };
 
