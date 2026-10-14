@@ -17,7 +17,7 @@ import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 
-// Allowed origins list
+// Allowed origins
 const allowedOrigins = new Set([
   ...(env.clientUrls || []),
   'http://localhost:3000',
@@ -26,16 +26,17 @@ const allowedOrigins = new Set([
   'http://127.0.0.1:3001',
   'http://0.0.0.0:3000',
   'http://0.0.0.0:3001',
-  'https://shotconnect-20yo.vercel.app'
+  'https://shotconnect-20yo.vercel.app',
+  'https://shotconnect-29ye.vercel.app'
 ]);
 
 const isAllowedOrigin = (origin: string | undefined): boolean => {
-  // Postman ya server-to-server calls ke liye
+  // Mobile apps, Postman ya curl calls
   if (!origin) return true;
 
   if (allowedOrigins.has(origin)) return true;
 
-  // Saare *.vercel.app domains aur local IPs ko allow karein
+  // Har Vercel preview/production URL ko allow karein
   if (origin.endsWith('.vercel.app')) return true;
 
   try {
@@ -56,21 +57,45 @@ const isAllowedOrigin = (origin: string | undefined): boolean => {
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     if (isAllowedOrigin(origin)) {
+      // Allowed hone par request origin reflect karein
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'Accept',
+    'Cookie',
+    'X-Requested-With'
+  ],
+  optionsSuccessStatus: 204
 };
 
-// CORS middleware apply karein
+// 1. CORS apply karein
 app.use(cors(corsOptions));
 
-// Preflight OPTIONS requests handle karein
-app.options('*', cors(corsOptions));
+// 2. Explicit Preflight OPTIONS Handler (CORS error permanently stop karne ke liye)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (isAllowedOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Content-Type, Authorization, Accept, Cookie, X-Requested-With'
+    );
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(express.json({ limit: '5mb' }));
