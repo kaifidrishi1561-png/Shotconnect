@@ -6,11 +6,16 @@ const protectedPrefixes = ['/home', '/dashboard', '/profile'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Next.js internal files, static assets, etc.
   if (pathname.startsWith('/_next') || pathname.startsWith('/api') || pathname.includes('.')) {
     return NextResponse.next();
   }
 
-  const hasAccessToken = Boolean(request.cookies.get('accessToken')?.value);
+  // Vercel domain par token ya auth flag check karein
+  const hasAccessToken = Boolean(
+    request.cookies.get('accessToken')?.value || 
+    request.cookies.get('auth_session')?.value
+  );
 
   if (pathname === '/') {
     return hasAccessToken

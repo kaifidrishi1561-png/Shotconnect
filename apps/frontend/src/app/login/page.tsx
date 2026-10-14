@@ -18,23 +18,27 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    console.log('Initiating login for:', email.trim().toLowerCase());
-
     try {
       const response = await api.post('/auth/login', {
         email: email.trim().toLowerCase(),
         password
       });
 
-      console.log('Login Response:', response.data);
-
       if (response.data?.success) {
-        // टोकन अगर localStorage में रखना हो तो बैकअप के लिए सेव कर लें
-        if (response.data.data?.accessToken) {
-          localStorage.setItem('accessToken', response.data.data.accessToken);
+        // 1. Next.js Middleware के लिए Vercel डोमेन पर सेशन कुकी सेट करें
+        document.cookie = 'auth_session=true; path=/; max-age=86400; SameSite=Lax';
+
+        // 2. बैकअप के लिए टोकन को localStorage में भी सेव रखें
+        const token =
+          response.data?.data?.accessToken ||
+          response.data?.accessToken;
+        if (token) {
+          localStorage.setItem('accessToken', token);
+          // अगर middleware 'accessToken' नाम से ही ढूंढ रहा हो तो Vercel पर भी सेट कर दें
+          document.cookie = `accessToken=${token}; path=/; max-age=86400; SameSite=Lax`;
         }
 
-        // क्रॉस-डोमेन कुकीज़ और स्टेट रीफ्रेश के लिए हार्ड नेविगेशन सबसे पक्का है:
+        // 3. हार्ड-रीडायरेक्ट करें ताकि Next.js नया सेशन लोड कर सके
         window.location.href = '/home';
         return;
       }
@@ -45,6 +49,7 @@ export default function LoginPage() {
       const serverMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
+        err.response?.data?.errors?.[0] ||
         'Invalid email or password';
       setError(serverMessage);
     } finally {
