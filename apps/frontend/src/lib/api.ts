@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const RENDER_BACKEND_URL = 'https://shotconnect-1.onrender.com/api';
+const RENDER_BACKEND_URL = 'https://shotconnect.onrender.com/api';
 
 const resolveApiBaseUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {

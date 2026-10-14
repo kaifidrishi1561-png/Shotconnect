@@ -1,7 +1,7 @@
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const RENDER_BACKEND_URL = 'https://shotconnect-1.onrender.com/api';
+const RENDER_BACKEND_URL = 'https://shotconnect.onrender.com/api';
 
 const resolveApiBaseUrl = async (): Promise<string> => {
   if (process.env.NEXT_PUBLIC_API_URL) {
