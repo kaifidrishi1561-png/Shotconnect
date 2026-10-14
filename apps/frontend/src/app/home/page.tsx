@@ -52,18 +52,24 @@ export default function HomePage() {
   const handleNavigate = (path: string) => {
     router.push(path);
   };
-
-  const handleLogout = async () => {
+const handleLogout = async () => {
     try {
+      // 1. Backend par HttpOnly cookies clear karne ki request bhejein
       await api.post('/auth/logout');
-    } catch (_error) {
-      // ignore backend errors and continue with local redirect
-    }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // 2. Vercel domain ki sabhi session cookies delete karein
+      document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'accessToken=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'refreshToken=; path=/; max-age=0; SameSite=Lax';
 
-    document.cookie = 'accessToken=; Max-Age=0; path=/; SameSite=Lax';
-    document.cookie = 'refreshToken=; Max-Age=0; path=/; SameSite=Lax';
-    router.push('/login');
-    router.refresh();
+      // 3. localStorage me rakha token saaf karein
+      localStorage.removeItem('accessToken');
+
+      // 4. Hard redirect karein taaki middleware aur pages fresh load ho sakein
+      window.location.href = '/login';
+    }
   };
 
   if (loading) {
