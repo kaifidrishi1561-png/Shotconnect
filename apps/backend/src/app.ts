@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -17,87 +17,61 @@ import adminRoutes from './routes/adminRoutes';
 
 const app = express();
 
-// Allowed origins
-const allowedOrigins = new Set([
-  ...(env.clientUrls || []),
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001',
-  'http://0.0.0.0:3000',
-  'http://0.0.0.0:3001',
-  'https://shotconnect-20yo.vercel.app',
-  'https://shotconnect-29ye.vercel.app'
-]);
+// 1. CORS Origin Checker
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true; // Postman / server-to-server calls
 
-const isAllowedOrigin = (origin: string | undefined): boolean => {
-  // Mobile apps, Postman ya curl calls
-  if (!origin) return true;
-
-  if (allowedOrigins.has(origin)) return true;
-
-  // Har Vercel preview/production URL ko allow karein
+  // Sabhi vercel.app domains ko allow karein
   if (origin.endsWith('.vercel.app')) return true;
 
-  try {
-    const { hostname } = new URL(origin);
-    return (
-      hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '0.0.0.0' ||
-      hostname.startsWith('192.168.') ||
-      hostname.startsWith('10.') ||
-      hostname.startsWith('172.')
-    );
-  } catch {
-    return false;
+  // Localhost aur private IPs
+  if (
+    origin.includes('localhost') ||
+    origin.includes('127.0.0.1') ||
+    origin.includes('0.0.0.0') ||
+    origin.startsWith('http://192.168.') ||
+    origin.startsWith('http://10.') ||
+    origin.startsWith('http://172.')
+  ) {
+    return true;
   }
+
+  // env me diye gaye URLs
+  if (env.clientUrls && env.clientUrls.includes(origin)) {
+    return true;
+  }
+
+  return false;
 };
 
-const corsOptions: cors.CorsOptions = {
-  origin: (origin, callback) => {
-    if (isAllowedOrigin(origin)) {
-      // Allowed hone par request origin reflect karein
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'Accept',
-    'Cookie',
-    'X-Requested-With'
-  ],
-  optionsSuccessStatus: 204
-};
-
-// 1. CORS apply karein
-app.use(cors(corsOptions));
-
-// 2. Explicit Preflight OPTIONS Handler (CORS error permanently stop karne ke liye)
-app.use((req, res, next) => {
+// 2. Custom Bulletproof CORS & Preflight Middleware (Sabse pehle aana chahiye)
+app.use((req: Request, res: Response, next: NextFunction) => {
   const origin = req.headers.origin;
-  if (isAllowedOrigin(origin)) {
+
+  if (isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin || '*');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Methods',
+      'GET, POST, PUT, PATCH, DELETE, OPTIONS'
+    );
     res.setHeader(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, Accept, Cookie, X-Requested-With'
+      'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
     );
   }
 
+  // Preflight OPTIONS request ko yahi par 204 No Content ke sath khatam karein
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(204);
+    return res.status(204).end();
   }
+
   next();
 });
 
+// Helmet ko configure karein taaki Cross-Origin block na kare
 app.use(helmet({ crossOriginResourcePolicy: false }));
+
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -120,7 +94,7 @@ const swaggerSpec = swaggerJsdoc({
       version: '1.0.0',
       description: 'API documentation for the ShotMatch marketplace.'
     },
-    servers: [{ url: `http://localhost:${env.port}` }]
+    servers: [{ url: `http://localhost:${env.port || 8000}` }]
   },
   apis: ['./src/routes/*.ts']
 });
