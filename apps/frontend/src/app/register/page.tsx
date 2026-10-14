@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { api } from '@/lib/api';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function RegisterPage() {
     password: '',
     role: 'BRAND'
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -105,16 +107,41 @@ export default function RegisterPage() {
             </select>
           </div>
 
+          {/* Password with Show / Hide Toggle Button */}
           <div className="sm:col-span-2 space-y-2">
-            <label className="text-sm font-medium text-slate-700">Password</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
-              minLength={8}
-              required
-            />
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-slate-700">Password</label>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-800 focus:outline-none"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                minLength={8}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -125,6 +152,13 @@ export default function RegisterPage() {
         >
           {loading ? 'Creating account...' : 'Create account'}
         </button>
+
+        <p className="mt-4 text-center text-sm text-slate-600">
+          Already have an account?{' '}
+          <Link href="/login" className="font-medium text-brand-600 hover:underline">
+            Log in
+          </Link>
+        </p>
       </form>
     </main>
   );
