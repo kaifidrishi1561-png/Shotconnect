@@ -11,8 +11,10 @@ const startServer = async () => {
     await seedDatabase();
     console.log('Database seed check complete');
 
-    app.listen(env.port, () => {
-      console.log(`ShotMatch API listening on port ${env.port}`);
+    const PORT = Number(process.env.PORT) || env.port || 8000;
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`ShotMatch API listening on port ${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server', error);
