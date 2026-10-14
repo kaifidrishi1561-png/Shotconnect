@@ -7,6 +7,7 @@ import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema 
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { env } from '../config/env';
 
+
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
@@ -85,14 +86,26 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       return;
     }
 
-    const user = await User.findOne({ email: parsed.data.email.toLowerCase() });
+    const email = parsed.data.email.toLowerCase().trim();
+    console.log("👉 Login attempt for email:", email);
+
+    // Explicitly select password field to avoid undefined
+    const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      console.log("❌ User not found with email:", email);
       res.status(404).json(sendError('Invalid credentials'));
       return;
     }
 
+    console.log("👉 User found:", user.email);
+    console.log("👉 Password from DB exists?:", Boolean(user.password));
+    console.log("👉 Incoming plain password exists?:", Boolean(parsed.data.password));
+
     const validPassword = await comparePassword(parsed.data.password, user.password);
+    console.log("👉 Password match result:", validPassword);
+
     if (!validPassword) {
+      console.log("❌ Password comparison failed!");
       res.status(401).json(sendError('Invalid credentials'));
       return;
     }
@@ -112,6 +125,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       })
     );
   } catch (error) {
+    console.error("❌ Login Server Error:", error);
     next(error);
   }
 };
