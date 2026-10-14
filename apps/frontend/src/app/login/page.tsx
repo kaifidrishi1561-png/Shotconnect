@@ -18,18 +18,35 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    console.log('Initiating login for:', email.trim().toLowerCase());
+
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password
+      });
+
+      console.log('Login Response:', response.data);
 
       if (response.data?.success) {
-        router.push('/home');
-        router.refresh();
+        // टोकन अगर localStorage में रखना हो तो बैकअप के लिए सेव कर लें
+        if (response.data.data?.accessToken) {
+          localStorage.setItem('accessToken', response.data.data.accessToken);
+        }
+
+        // क्रॉस-डोमेन कुकीज़ और स्टेट रीफ्रेश के लिए हार्ड नेविगेशन सबसे पक्का है:
+        window.location.href = '/home';
         return;
       }
 
       setError(response.data?.message || 'Login failed');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid email or password');
+      console.error('Login submit error:', err);
+      const serverMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Invalid email or password';
+      setError(serverMessage);
     } finally {
       setLoading(false);
     }
@@ -60,7 +77,6 @@ export default function LoginPage() {
               Manage projects, discover photographers, and streamline brand collaborations in one place.
             </p>
           </div>
-
         </div>
 
         <div className="relative p-6 sm:p-8 lg:p-10">
@@ -132,7 +148,7 @@ export default function LoginPage() {
               disabled={loading}
               className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-cyan-500 px-4 py-3.5 font-semibold text-white shadow-[0_18px_35px_rgba(99,102,241,0.35)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_22px_40px_rgba(99,102,241,0.4)] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              <span className="relative z-10">{loading ? 'login...' : 'Login'}</span>
+              <span className="relative z-10">{loading ? 'Logging in...' : 'Login'}</span>
               <span className="absolute inset-0 bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </button>
           </form>

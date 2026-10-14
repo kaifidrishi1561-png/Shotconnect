@@ -9,18 +9,20 @@ import { env } from '../config/env';
 
 
 const setAuthCookies = (res: Response, accessToken: string, refreshToken: string) => {
+  const isProduction = process.env.NODE_ENV === 'production' || env.nodeEnv === 'production';
+
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: env.cookieSecure,
-    sameSite: 'lax',
-    maxAge: 15 * 60 * 1000
+    secure: isProduction, // Production me HTTPS ke liye true
+    sameSite: isProduction ? 'none' : 'lax', // Cross-domain (Vercel <-> Render) ke liye 'none' zaroori hai
+    maxAge: 15 * 60 * 1000 // 15 minutes
   });
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: env.cookieSecure,
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax', // Cross-domain ke liye 'none' zaroori hai
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   });
 };
 
